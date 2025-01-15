@@ -1,22 +1,62 @@
-### AL ###
-#Template for AL projects for Dynamics 365 Business Central
-#launch.json folder
-.vscode/
-#Cache folder
-.alcache/
-#Symbols folder
-.alpackages/
-#Snapshots folder
-.snapshots/
-#Testing Output folder
-.output/
-#Extension App-file
-*.app
-#Rapid Application Development File
-rad.json
-#Translation Base-file
-*.g.xlf
-#License-file
-*.flf
-#Test results file
-TestResults.xml
+import numpy as np
+
+# Activation functions
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# Mean Squared Error
+def mse_loss(y_true, y_pred):
+    return np.mean((y_true - y_pred) ** 2)
+
+# Neural Network Class
+class NeuralNetwork:
+    def __init__(self, input_size, hidden_size, output_size):
+        # Initialize weights and biases
+        self.weights_input_hidden = np.random.randn(input_size, hidden_size)
+        self.bias_hidden = np.zeros((1, hidden_size))
+        self.weights_hidden_output = np.random.randn(hidden_size, output_size)
+        self.bias_output = np.zeros((1, output_size))
+    
+    def feedforward(self, X):
+        # Forward pass
+        self.hidden = sigmoid(np.dot(X, self.weights_input_hidden) + self.bias_hidden)
+        self.output = sigmoid(np.dot(self.hidden, self.weights_hidden_output) + self.bias_output)
+        return self.output
+    
+    def backpropagation(self, X, y, learning_rate):
+        # Error calculation
+        output_error = y - self.output
+        output_delta = output_error * sigmoid_derivative(self.output)
+        
+        hidden_error = np.dot(output_delta, self.weights_hidden_output.T)
+        hidden_delta = hidden_error * sigmoid_derivative(self.hidden)
+        
+        # Update weights and biases
+        self.weights_hidden_output += np.dot(self.hidden.T, output_delta) * learning_rate
+        self.bias_output += np.sum(output_delta, axis=0, keepdims=True) * learning_rate
+        self.weights_input_hidden += np.dot(X.T, hidden_delta) * learning_rate
+        self.bias_hidden += np.sum(hidden_delta, axis=0, keepdims=True) * learning_rate
+    
+    def train(self, X, y, epochs, learning_rate):
+        for epoch in range(epochs):
+            self.feedforward(X)
+            self.backpropagation(X, y, learning_rate)
+            if epoch % 1000 == 0:
+                loss = mse_loss(y, self.output)
+                print(f"Epoch {epoch}, Loss: {loss}")
+
+# Training data: XOR problem
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y = np.array([[0], [1], [1], [0]])
+
+# Create and train the neural network
+nn = NeuralNetwork(input_size=2, hidden_size=4, output_size=1)
+nn.train(X, y, epochs=10000, learning_rate=0.1)
+
+# Test the model
+print("Predictions:")
+for i in X:
+    print(f"{i} -> {nn.feedforward(i)}")
